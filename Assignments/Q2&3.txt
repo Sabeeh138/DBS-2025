@@ -1,0 +1,224 @@
+QUESTION 2:
+
+-- 1
+CREATE TABLE Members (
+    MemberID INT PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) UNIQUE,
+    JoinDate DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE Books (
+    BookID INT PRIMARY KEY,
+    Title VARCHAR(100) NOT NULL,
+    Author VARCHAR(100),
+    CopiesAvailable INT CHECK (CopiesAvailable >= 0)
+);
+
+CREATE TABLE IssuedBooks (
+    IssueID INT PRIMARY KEY,
+    MemberID INT,
+    BookID INT,
+    IssueDate DATE DEFAULT CURRENT_DATE,
+    ReturnDate DATE,
+    FOREIGN KEY (MemberID) REFERENCES Members(MemberID),
+    FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);
+
+-- 3a
+INSERT INTO Members VALUES (1, 'M Sabeeh', 'sabeeh@example.com', DEFAULT);
+INSERT INTO Members VALUES (2, 'Hamza Sheikh', 'hamza@example.com', DEFAULT);
+INSERT INTO Members VALUES (3, 'Huzaifa ali', 'huzaifa@example.com', DEFAULT);
+
+INSERT INTO Books VALUES (101, 'Book A', 'Author X', 5);
+INSERT INTO Books VALUES (102, 'Book B', 'Author Y', 3);
+INSERT INTO Books VALUES (103, 'Book C', 'Author Z', 2);
+
+-- 3b
+INSERT INTO IssuedBooks (IssueID, MemberID, BookID) VALUES (1, 1, 101);
+UPDATE Books SET CopiesAvailable = CopiesAvailable - 1 WHERE BookID = 101;
+
+-- 3c
+SELECT M.Name, B.Title
+FROM Members M
+JOIN IssuedBooks I ON M.MemberID = I.MemberID
+JOIN Books B ON I.BookID = B.BookID;
+
+-- 4a
+INSERT INTO Members VALUES (1, 'Duplicate', 'dup@example.com', DEFAULT);
+
+-- 4b
+INSERT INTO IssuedBooks (IssueID, MemberID, BookID) VALUES (2, 999, 101);
+
+-- 4c
+INSERT INTO Books VALUES (104, 'Book D', 'Author Q', -5);
+
+-- 5
+-- Future improvements listed
+
+-- 6a
+SELECT Name FROM Members
+WHERE MemberID NOT IN (SELECT MemberID FROM IssuedBooks);
+
+-- 6b
+SELECT Title FROM Books
+WHERE CopiesAvailable = (SELECT MAX(CopiesAvailable) FROM Books);
+
+-- 6c
+SELECT M.Name
+FROM Members M
+WHERE M.MemberID = (
+    SELECT MemberID
+    FROM IssuedBooks
+    GROUP BY MemberID
+    ORDER BY COUNT(*) DESC
+    FETCH FIRST 1 ROW ONLY
+);
+
+-- 6d
+SELECT Title FROM Books
+WHERE BookID NOT IN (SELECT BookID FROM IssuedBooks);
+
+-- 6e
+SELECT M.Name, B.Title
+FROM Members M
+JOIN IssuedBooks I ON M.MemberID = I.MemberID
+JOIN Books B ON I.BookID = B.BookID
+WHERE I.ReturnDate IS NULL
+AND I.IssueDate < (CURRENT_DATE - 30);
+
+
+QUESTION 3:
+-- 1
+CREATE TABLE Patient (
+    Patient_ID INT PRIMARY KEY,
+    Name VARCHAR(20) NOT NULL,
+    Gender VARCHAR(1) CHECK (Gender IN ('M', 'F')),
+    DOB DATE,
+    Phone INT,
+    Email VARCHAR(40) UNIQUE,
+    Username VARCHAR(50),
+    Password VARCHAR(40)
+);
+
+CREATE TABLE Doctor (
+    Doctor_ID INT PRIMARY KEY,
+    Name VARCHAR(20),
+    Specialization VARCHAR(20),
+    Username VARCHAR(50),
+    Password VARCHAR(40)
+);
+
+CREATE TABLE Appointment (
+    Appointment_ID INT PRIMARY KEY,
+    Appointment_Date DATE,
+    Appointment_Time INT,
+    Status VARCHAR(15) CHECK (Status IN ('WAITING', 'CHECKED')),
+    Clinic_Number INT,
+    Patient_ID INT,
+    Doctor_ID INT,
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Doctor_ID) REFERENCES Doctor(Doctor_ID)
+);
+
+CREATE TABLE Prescription (
+    Prescription_ID INT PRIMARY KEY,
+    Prescription_Date DATE,
+    Doctor_Advice VARCHAR(50),
+    Followup_Required VARCHAR(3) CHECK (Followup_Required IN ('YES','NO')),
+    Patient_ID INT,
+    Doctor_ID INT,
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID),
+    FOREIGN KEY (Doctor_ID) REFERENCES Doctor(Doctor_ID)
+);
+
+CREATE TABLE Invoice (
+    Invoice_ID INT PRIMARY KEY,
+    Invoice_Date DATE,
+    Amount INT,
+    Payment_Status VARCHAR(10) CHECK (Payment_Status IN ('PAID','NOT PAID')),
+    Payment_Method VARCHAR(4) CHECK (Payment_Method IN ('CASH','CARD')),
+    Patient_ID INT,
+    FOREIGN KEY (Patient_ID) REFERENCES Patient(Patient_ID)
+);
+
+CREATE TABLE Tests (
+    Test_ID INT PRIMARY KEY,
+    Blood_Test NUMBER(1),
+    X_Ray NUMBER(1),
+    MRI NUMBER(1),
+    CT_Scan NUMBER(1)
+);
+
+-- 2
+INSERT INTO Patient VALUES (1,'M Sabeeh','M',TO_DATE('10-05-1990','DD-MM-YYYY'),123456789,'sabeeh@example.com','sabeeh_m','pass1');
+INSERT INTO Patient VALUES (2,'Hamza Sheikh','F',TO_DATE('22-03-1985','DD-MM-YYYY'),987654321,'hamza@example.com','hamza_s','pass2');
+INSERT INTO Patient VALUES (3,'Huzaifa ali','M',TO_DATE('15-07-1992','DD-MM-YYYY'),555111222,'huzaifa@example.com','huzi_a','pass3');
+
+INSERT INTO Doctor VALUES (1,'Dr. Naveed','Gastrology','naveed_z','docpass1');
+INSERT INTO Doctor VALUES (2,'Dr. Emman','GameOlogy','emman_a','docpass2');
+
+INSERT INTO Appointment VALUES (1,TO_DATE('01-09-2025','DD-MM-YYYY'),1000,'WAITING',101,1,1);
+INSERT INTO Appointment VALUES (2,TO_DATE('02-09-2025','DD-MM-YYYY'),1200,'CHECKED',102,2,2);
+INSERT INTO Appointment VALUES (3,TO_DATE('03-09-2025','DD-MM-YYYY'),1400,'WAITING',103,3,1);
+
+INSERT INTO Prescription VALUES (1,TO_DATE('02-09-2025','DD-MM-YYYY'),'Take medicine A','YES',1,1);
+INSERT INTO Prescription VALUES (2,TO_DATE('02-09-2025','DD-MM-YYYY'),'Take medicine B','NO',2,2);
+INSERT INTO Prescription VALUES (3,TO_DATE('04-09-2025','DD-MM-YYYY'),'Take medicine C','YES',3,1);
+
+INSERT INTO Invoice VALUES (1,TO_DATE('01-09-2025','DD-MM-YYYY'),5000,'NOT PAID','CASH',1);
+INSERT INTO Invoice VALUES (2,TO_DATE('02-09-2025','DD-MM-YYYY'),7000,'PAID','CARD',2);
+INSERT INTO Invoice VALUES (3,TO_DATE('03-09-2025','DD-MM-YYYY'),3000,'NOT PAID','CASH',3);
+
+INSERT INTO Tests VALUES (1,1,0,0,0);
+INSERT INTO Tests VALUES (2,0,1,0,0);
+INSERT INTO Tests VALUES (3,0,0,1,0);
+
+-- 3a
+UPDATE Patient SET Phone=123456, Email='alikhan@gmail.com' WHERE Patient_ID=1;
+
+-- 3b
+UPDATE Invoice SET Payment_Status='PAID' WHERE Payment_Status='NOT PAID' AND Invoice_ID=1;
+
+-- 3c
+DELETE FROM Appointment WHERE Status='CANCELLED';
+
+-- 3d
+DELETE FROM Invoice WHERE Payment_Status='REFUNDED';
+
+-- 3e
+SELECT * FROM Appointment WHERE Status='WAITING';
+
+-- 3f
+SELECT * FROM Invoice WHERE Payment_Status='NOT PAID';
+
+-- 3g
+SELECT * FROM Tests WHERE Blood_Test=1;
+
+-- 3h
+SELECT * FROM Prescription WHERE Prescription_Date=TO_DATE('2025-09-02','YYYY-MM-DD');
+
+-- 4a
+SELECT P.Name AS Patient_Name, D.Name AS Doctor_Name
+FROM Appointment A
+JOIN Patient P ON A.Patient_ID=P.Patient_ID
+JOIN Doctor D ON A.Doctor_ID=D.Doctor_ID;
+
+-- 4b
+SELECT P.Name AS Patient_Name, T.*, D.Name AS Doctor_Name
+FROM Tests T
+JOIN Patient P ON T.Test_ID=P.Patient_ID
+JOIN Appointment A ON P.Patient_ID=A.Patient_ID
+JOIN Doctor D ON A.Doctor_ID=D.Doctor_ID;
+
+-- 4c
+SELECT PR.Doctor_Advice
+FROM Prescription PR
+JOIN Patient P ON PR.Patient_ID=P.Patient_ID
+WHERE P.Name='Ali Khan';
+
+-- 4d
+SELECT PR.Doctor_Advice, D.Name AS Doctor_Name
+FROM Prescription PR
+JOIN Doctor D ON PR.Doctor_ID=D.Doctor_ID
+WHERE PR.Followup_Required='YES';
